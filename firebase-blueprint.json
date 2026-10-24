@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Tax invoice document for AVA Passengers Transport",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "invoiceNo": { "type": "string" },
+        "invoiceDate": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "companyTrn": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientAddress": { "type": "string" },
+        "clientPoBox": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "clientTrn": { "type": "string" },
+        "itemsJson": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "vatAmount": { "type": "number" },
+        "totalDue": { "type": "number" },
+        "status": { "type": "string", "enum": ["Draft", "Pending", "Paid", "Overdue"] },
+        "paymentTerms": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "invoiceNo", "invoiceDate", "clientName", "totalDue", "status", "createdAt"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Transport bus fleet vehicle data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "busNo": { "type": "string" },
+        "plateNo": { "type": "string" },
+        "makeModel": { "type": "string" },
+        "seatingCapacity": { "type": "string" },
+        "fuelType": { "type": "string" },
+        "driverName": { "type": "string" },
+        "status": { "type": "string" },
+        "mulkiyaExpiry": { "type": "string" },
+        "defaultDailyRate": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "busNo", "plateNo", "makeModel", "driverName", "status", "createdAt"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Transport service contract catalog item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "code": { "type": "string" },
+        "category": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "typicalBusCapacity": { "type": "string" },
+        "rateBasis": { "type": "string" },
+        "standardRate": { "type": "number" },
+        "inclusions": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "code", "name", "category", "standardRate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Collection of invoices owned by the authenticated user"
+    },
+    "/users/{userId}/vehicles/{vehicleId}": {
+      "schema": { "$ref": "#/entities/Vehicle" },
+      "description": "Collection of fleet vehicles owned by the authenticated user"
+    },
+    "/users/{userId}/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/Service" },
+      "description": "Collection of custom services catalog owned by the authenticated user"
+    }
+  }
+}

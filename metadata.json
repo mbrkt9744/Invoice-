@@ -1,0 +1,6 @@
+{
+  "name": "AVA Invoices",
+  "description": "Tax invoice generator and tracker system for AVA Passengers Transport with vehicle and service data catalogs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

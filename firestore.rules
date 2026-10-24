@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidInvoice(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.invoiceNo is string && data.invoiceNo.size() >= 1 && data.invoiceNo.size() <= 64 &&
+             data.invoiceDate is string && data.invoiceDate.size() <= 64 &&
+             (!('dueDate' in data) || (data.dueDate is string && data.dueDate.size() <= 64)) &&
+             (!('companyTrn' in data) || (data.companyTrn is string && data.companyTrn.size() <= 64)) &&
+             data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 200 &&
+             (!('clientAddress' in data) || (data.clientAddress is string && data.clientAddress.size() <= 300)) &&
+             (!('clientPoBox' in data) || (data.clientPoBox is string && data.clientPoBox.size() <= 100)) &&
+             (!('clientPhone' in data) || (data.clientPhone is string && data.clientPhone.size() <= 100)) &&
+             (!('clientTrn' in data) || (data.clientTrn is string && data.clientTrn.size() <= 64)) &&
+             (!('itemsJson' in data) || (data.itemsJson is string && data.itemsJson.size() <= 50000)) &&
+             (!('subtotal' in data) || data.subtotal is number) &&
+             (!('vatAmount' in data) || data.vatAmount is number) &&
+             data.totalDue is number &&
+             data.status in ['Draft', 'Pending', 'Paid', 'Overdue'] &&
+             (!('paymentTerms' in data) || (data.paymentTerms is string && data.paymentTerms.size() <= 500)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidVehicle(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.busNo is string && data.busNo.size() >= 1 && data.busNo.size() <= 64 &&
+             data.plateNo is string && data.plateNo.size() >= 1 && data.plateNo.size() <= 64 &&
+             data.makeModel is string && data.makeModel.size() <= 150 &&
+             (!('seatingCapacity' in data) || (data.seatingCapacity is string && data.seatingCapacity.size() <= 100)) &&
+             (!('fuelType' in data) || (data.fuelType is string && data.fuelType.size() <= 50)) &&
+             data.driverName is string && data.driverName.size() <= 150 &&
+             data.status is string && data.status.size() <= 50 &&
+             (!('mulkiyaExpiry' in data) || (data.mulkiyaExpiry is string && data.mulkiyaExpiry.size() <= 50)) &&
+             (!('defaultDailyRate' in data) || data.defaultDailyRate is number);
+    }
+
+    function isValidService(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.code is string && data.code.size() >= 1 && data.code.size() <= 64 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             (!('typicalBusCapacity' in data) || (data.typicalBusCapacity is string && data.typicalBusCapacity.size() <= 100)) &&
+             (!('rateBasis' in data) || (data.rateBasis is string && data.rateBasis.size() <= 50)) &&
+             data.standardRate is number &&
+             (!('inclusions' in data) || (data.inclusions is string && data.inclusions.size() <= 500));
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create, update, delete: if isOwner(userId);
+
+      match /invoices/{invoiceId} {
+        allow get: if isOwner(userId) && isValidId(invoiceId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(invoiceId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidInvoice(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(invoiceId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidInvoice(incoming());
+        allow delete: if isOwner(userId) && isValidId(invoiceId);
+      }
+
+      match /vehicles/{vehicleId} {
+        allow get: if isOwner(userId) && isValidId(vehicleId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(vehicleId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidVehicle(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(vehicleId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidVehicle(incoming());
+        allow delete: if isOwner(userId) && isValidId(vehicleId);
+      }
+
+      match /services/{serviceId} {
+        allow get: if isOwner(userId) && isValidId(serviceId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(serviceId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidService(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(serviceId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidService(incoming());
+        allow delete: if isOwner(userId) && isValidId(serviceId);
+      }
+    }
+  }
+}
